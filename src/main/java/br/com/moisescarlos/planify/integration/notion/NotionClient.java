@@ -41,9 +41,6 @@ public class NotionClient {
         return h;
     }
 
-    /**
-     * Cria uma nova página no Notion.
-     */
     public String createTaskPage(Task task) {
         String url = "https://api.notion.com/v1/pages";
         ZonedDateTime zonedDateTime = task.getScheduledDateTime().atZone(ZoneId.of("America/Sao_Paulo"));
@@ -240,6 +237,66 @@ public class NotionClient {
             return tasks;
         } catch (Exception e) {
             System.err.println("Erro ao buscar tarefas por horário: " + e.getMessage());
+            return List.of();
+        }
+    }
+
+    public void updateStatus(String pageId, String newStatusName) {
+        // A URL para atualizar uma página termina com o ID dela
+        String url = "https://api.notion.com/v1/pages/" + pageId;
+
+        // Estrutura: properties -> Status -> status -> name
+        Map<String, Object> body = Map.of(
+                "properties", Map.of(
+                        "Status", Map.of(
+                                "status", Map.of("name", newStatusName)
+                        )
+                )
+        );
+
+        try {
+            // Notion exige PATCH para atualizações parciais
+            restTemplate.patchForObject(url, new HttpEntity<>(body, createHeaders()), String.class);
+            log.info("Sucesso! Página {} movida para o status: {}", pageId, newStatusName);
+        } catch (Exception e) {
+            log.error("Falha ao atualizar status no Notion para a página {}: {}", pageId, e.getMessage());
+        }
+    }
+
+    public List<Task> getCompletedTasksLast7Days() {
+        String url = "https://api.notion.com/v1/databases/" + databaseId + "/query";
+        String sevenDaysAgo = LocalDate.now().minusDays(7).toString();
+
+        // Filtro: Status == 'Concluído' AND Data >= 7 dias atrás
+        Map<String, Object> body = Map.of("filter", Map.of("and", List.of(
+                Map.of("property", "Status", "status", Map.of("equals", "Concluído")),
+                Map.of("property", "Data", "date", Map.of("on_or_after", sevenDaysAgo))
+        )));
+
+        try {
+            ResponseEntity<Map> response = restTemplate.postForEntity(url, new HttpEntity<>(body, createHeaders()), Map.class);
+            List<Map> results = (List<Map>) response.getBody().get("results");
+            List<Task> completedTasks = new ArrayList<>();
+
+            if (results != null) {
+                for (Map result : results) {
+                    Map<String, Object> props = (Map<String, Object>) result.get("properties");
+
+                    // Extração do Nome
+                    List<Map> titleList = (List<Map>) ((Map) props.get("Nome")).get("title");
+                    String title = titleList.isEmpty() ? "Tarefa" : (String) titleList.get(0).get("plain_text");
+
+                    // Extração da Categoria
+                    String category = "Geral";
+                    Map<String, Object> select = (Map<String, Object>) ((Map) props.get("Categoria")).get("select");
+                    if (select != null) category = (String) select.get("name");
+
+                    completedTasks.add(new Task(title, LocalDateTime.now(), 60, null, category));
+                }
+            }
+            return completedTasks;
+        } catch (Exception e) {
+            log.error("Erro ao buscar estatísticas: {}", e.getMessage());
             return List.of();
         }
     }

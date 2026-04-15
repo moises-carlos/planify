@@ -34,9 +34,31 @@ public class TelegramClient {
             body.put("reply_markup", Map.of("inline_keyboard", buttons));
         }
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        executeRequest(url, body);
+    }
 
-        restTemplate.postForEntity(url, new HttpEntity<>(body, headers), String.class);
+    // ✅ NOVO MÉTODO: Edita uma mensagem existente (remove botões e altera o texto)
+    public void editMessage(long chatId, Integer messageId, String newText) {
+        String url = "https://api.telegram.org/bot" + botToken + "/editMessageText";
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("chat_id", chatId);
+        body.put("message_id", messageId);
+        body.put("text", newText);
+        body.put("parse_mode", "HTML");
+        // Ao não passar o 'reply_markup', os botões originais desaparecem automaticamente
+
+        executeRequest(url, body);
+    }
+
+    private void executeRequest(String url, Map<String, Object> body) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            restTemplate.postForEntity(url, new HttpEntity<>(body, headers), String.class);
+        } catch (Exception e) {
+            // Log de erro básico para evitar que o bot trave se o Telegram falhar
+            System.err.println("Erro ao comunicar com API do Telegram: " + e.getMessage());
+        }
     }
 }

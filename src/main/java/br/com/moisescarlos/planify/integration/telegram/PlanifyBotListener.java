@@ -1,6 +1,7 @@
 package br.com.moisescarlos.planify.integration.telegram;
 
 import br.com.moisescarlos.planify.application.planner.PlannerService;
+import br.com.moisescarlos.planify.domain.model.Task;
 import br.com.moisescarlos.planify.integration.notion.NotionClient;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.beans.factory.annotation.Value;
@@ -93,15 +94,23 @@ public class PlanifyBotListener extends TelegramLongPollingBot {
 
     private void handleCallback(Update update) {
         String callbackData = update.getCallbackQuery().getData();
+        long chatId = update.getCallbackQuery().getMessage().getChatId();
+        Integer messageId = update.getCallbackQuery().getMessage().getMessageId();
 
         if (callbackData.startsWith("done:")) {
             String pageId = callbackData.split(":")[1];
 
-            // Ação no Notion
+            // 1. Move o card no seu Dashboard do Notion
             notionClient.updateTaskStatus(pageId, "Concluído");
 
-            // Resposta no Telegram em PT-BR
-            telegramClient.sendMessage("Tarefa concluída com sucesso! 🚀");
+            // 2. Recupera o texto da tarefa (ex: "📌 Estudar Java")
+            String originalText = update.getCallbackQuery().getMessage().getText();
+
+            // 3. Monta o texto de sucesso (Riscado + Itálico)
+            String feedbackText = "✅ <s>" + originalText + "</s>\n<i>Tarefa concluída no Notion!</i>";
+
+            // 4. Atualiza a mensagem no Telegram (o botão de concluir vai sumir aqui)
+            telegramClient.editMessage(chatId, messageId, feedbackText);
         }
     }
 
@@ -128,23 +137,29 @@ public class PlanifyBotListener extends TelegramLongPollingBot {
     }
 
     private void processStatus() {
-        List<Map<String, String>> tasks = notionClient.getTasksForToday();
-        int pending = tasks.size();
-        
-        String statusText = String.format("""
-                📊 <b>Resumo do Dia</b>
-                
-                📅 <b>Data:</b> %s
-                📝 <b>Tarefas Pendentes:</b> %d
-                
-                %s
-                
-                ✨ <i>Mantenha o foco e produtividade!</i>
-                """, 
-                java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
-                pending,
-                pending == 0 ? "✅ Você está em dia com suas metas!" : "🎯 Você ainda tem compromissos hoje. Use /listar para vê-los."
-        );
-        telegramClient.sendMessage(statusText);
+        List<Task> completedTasks = notionClient.getCompletedTasksLast7Days();
+
+        if (completedTasks.isEmpty()) {
+            telegramClient.sendMessage("📊 <b>Ainda não tenho dados suficientes para sua semana.</b>\nConclua algumas tarefas no Notion primeiro!");
+            return;
+        }
+
+        // Agrupar e contar por categoria
+        Map<String, Long> stats = completedTasks.stream()
+                .collect(java.util.stream.Collectors.groupingBy(Task::getCategory, java.util.stream.Collectors.counting()));
+
+        int total = completedTasks.size();
+        StringBuilder report = new StringBuilder("📊 <b>Seu Resumo Semanal</b>\n\n");
+        report.append("✅ <b>Total Concluído:</b> ").append(total).append(" tarefas\n\n");
+        report.append("🔥 <b>Foco por Categoria:</b>\n");
+
+        stats.forEach((category, count) -> {
+            double percent = (count.doubleValue() / total) * 100;
+            String progress = "▓".repeat((int) percent / 10) + "░".repeat(10 - (int) percent / 10);
+            report.append(String.format("<b>%s</b>: %.0f%%\n<code>%s</code> (%d)\n", category, percent, progress, count));
+        });
+
+        report.append("\n✨ <i>Continue evoluindo, Moisés!</i>");
+        telegramClient.sendMessage(report.toString());
     }
 }

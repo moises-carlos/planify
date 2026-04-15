@@ -13,9 +13,7 @@ import java.util.List;
 @Component
 public class HoursTaskStrategy implements TaskStrategy {
 
-    // Cada bloco de estudo/trabalho terá 60 minutos (1h)
     private static final int TASK_DURATION_MINUTES = 60;
-    // Intervalo de descanso entre os blocos
     private static final int BREAK_DURATION_MINUTES = 15;
 
     @Override
@@ -27,7 +25,6 @@ public class HoursTaskStrategy implements TaskStrategy {
     public List<Task> generateTasks(Objective objective, Goal goal, LocalDateTime startDate) {
         List<Task> generatedTasks = new ArrayList<>();
 
-        // Quantidade total de horas solicitada (ex: 2h)
         int totalHours = objective.getAmount();
         int totalMinutesToPlan = totalHours * 60;
         int plannedMinutes = 0;
@@ -35,15 +32,21 @@ public class HoursTaskStrategy implements TaskStrategy {
         LocalDateTime currentTaskDate = startDate;
         int part = 1;
 
+        // ✅ Cálculo prévio para saber se haverá mais de uma parte
+        int totalParts = (int) Math.ceil((double) totalMinutesToPlan / TASK_DURATION_MINUTES);
+
         while (plannedMinutes < totalMinutesToPlan) {
-            // Se restarem menos de 60 min, pega o restante, senão pega 60 min
             int currentBlockMinutes = Math.min(TASK_DURATION_MINUTES, totalMinutesToPlan - plannedMinutes);
 
-            // Adicionamos "(Part X)" ao título para você saber a ordem no Notion/Telegram
-            String titleWithPart = objective.getTitle() + " (Part " + part + ")";
+            // ✅ LÓGICA REFORMULADA:
+            // Só adiciona "(Part X)" se o objetivo total for maior que um único bloco (60 min)
+            String finalTitle = objective.getTitle();
+            if (totalParts > 1) {
+                finalTitle += " (Part " + part + ")";
+            }
 
             Task task = new Task(
-                    titleWithPart,
+                    finalTitle,
                     currentTaskDate,
                     currentBlockMinutes,
                     goal,
@@ -55,8 +58,6 @@ public class HoursTaskStrategy implements TaskStrategy {
             plannedMinutes += currentBlockMinutes;
             part++;
 
-            // CÁLCULO DO PRÓXIMO HORÁRIO:
-            // Horário de início da tarefa anterior + duração da tarefa + intervalo
             currentTaskDate = currentTaskDate
                     .plusMinutes(currentBlockMinutes)
                     .plusMinutes(BREAK_DURATION_MINUTES);
