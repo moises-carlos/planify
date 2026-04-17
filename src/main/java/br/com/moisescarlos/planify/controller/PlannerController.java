@@ -21,8 +21,6 @@ public class PlannerController {
 
     @PostMapping
     public ResponseEntity<Void> generatePlan(@Valid @RequestBody ObjectiveRequest request) {
-        // Mudamos de generatePlan para handleCommand para suportar
-        // as novas lógicas de MOVE e DELETE via API
         plannerService.handleCommand(request.text());
 
         return ResponseEntity.accepted().build();

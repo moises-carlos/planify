@@ -1,8 +1,8 @@
-package br.com.moisescarlos.planify.integration.telegram;
+package br.com.moisescarlos.planify.infrastructure.integration.telegram;
 
 import br.com.moisescarlos.planify.application.planner.PlannerService;
 import br.com.moisescarlos.planify.domain.model.Task;
-import br.com.moisescarlos.planify.integration.notion.NotionClient;
+import br.com.moisescarlos.planify.infrastructure.integration.notion.NotionClient;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -50,7 +50,6 @@ public class PlanifyBotListener extends TelegramLongPollingBot {
 
             if (!chatId.equals(allowedChatId)) return;
 
-            // 1. Comandos Fixos
             if (text.equalsIgnoreCase("/listar")) {
                 processTaskList();
             }
@@ -60,9 +59,7 @@ public class PlanifyBotListener extends TelegramLongPollingBot {
             else if (text.equalsIgnoreCase("/status")) {
                 processStatus();
             }
-            // 2. Processamento de Linguagem Natural (IA + Regex)
             else {
-                // Trocamos 'generatePlan' por 'handleCommand' para suportar MOVE e DELETE
                 plannerService.handleCommand(text);
             }
         }
@@ -83,7 +80,6 @@ public class PlanifyBotListener extends TelegramLongPollingBot {
         for (Map<String, String> task : tasks) {
             String messageText = "📌 " + task.get("name");
 
-            // Texto do botão em PT-BR, Data em EN
             var buttons = List.of(List.of(
                     Map.of("text", "✅ Concluir", "callback_data", "done:" + task.get("id"))
             ));
@@ -100,16 +96,11 @@ public class PlanifyBotListener extends TelegramLongPollingBot {
         if (callbackData.startsWith("done:")) {
             String pageId = callbackData.split(":")[1];
 
-            // 1. Move o card no seu Dashboard do Notion
             notionClient.updateTaskStatus(pageId, "Concluído");
 
-            // 2. Recupera o texto da tarefa (ex: "📌 Estudar Java")
             String originalText = update.getCallbackQuery().getMessage().getText();
-
-            // 3. Monta o texto de sucesso (Riscado + Itálico)
             String feedbackText = "✅ <s>" + originalText + "</s>\n<i>Tarefa concluída no Notion!</i>";
 
-            // 4. Atualiza a mensagem no Telegram (o botão de concluir vai sumir aqui)
             telegramClient.editMessage(chatId, messageId, feedbackText);
         }
     }
@@ -144,7 +135,6 @@ public class PlanifyBotListener extends TelegramLongPollingBot {
             return;
         }
 
-        // Agrupar e contar por categoria
         Map<String, Long> stats = completedTasks.stream()
                 .collect(java.util.stream.Collectors.groupingBy(Task::getCategory, java.util.stream.Collectors.counting()));
 

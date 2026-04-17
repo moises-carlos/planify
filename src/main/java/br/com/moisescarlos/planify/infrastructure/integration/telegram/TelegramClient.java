@@ -1,4 +1,4 @@
-package br.com.moisescarlos.planify.integration.telegram;
+package br.com.moisescarlos.planify.infrastructure.integration.telegram;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -37,7 +37,6 @@ public class TelegramClient {
         executeRequest(url, body);
     }
 
-    // ✅ NOVO MÉTODO: Edita uma mensagem existente (remove botões e altera o texto)
     public void editMessage(long chatId, Integer messageId, String newText) {
         String url = "https://api.telegram.org/bot" + botToken + "/editMessageText";
 
@@ -46,7 +45,6 @@ public class TelegramClient {
         body.put("message_id", messageId);
         body.put("text", newText);
         body.put("parse_mode", "HTML");
-        // Ao não passar o 'reply_markup', os botões originais desaparecem automaticamente
 
         executeRequest(url, body);
     }
@@ -57,7 +55,6 @@ public class TelegramClient {
             headers.setContentType(MediaType.APPLICATION_JSON);
             restTemplate.postForEntity(url, new HttpEntity<>(body, headers), String.class);
         } catch (Exception e) {
-            // Log de erro básico para evitar que o bot trave se o Telegram falhar
             System.err.println("Erro ao comunicar com API do Telegram: " + e.getMessage());
         }
     }

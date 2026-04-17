@@ -32,14 +32,11 @@ public class HoursTaskStrategy implements TaskStrategy {
         LocalDateTime currentTaskDate = startDate;
         int part = 1;
 
-        // ✅ Cálculo prévio para saber se haverá mais de uma parte
         int totalParts = (int) Math.ceil((double) totalMinutesToPlan / TASK_DURATION_MINUTES);
 
         while (plannedMinutes < totalMinutesToPlan) {
             int currentBlockMinutes = Math.min(TASK_DURATION_MINUTES, totalMinutesToPlan - plannedMinutes);
 
-            // ✅ LÓGICA REFORMULADA:
-            // Só adiciona "(Part X)" se o objetivo total for maior que um único bloco (60 min)
             String finalTitle = objective.getTitle();
             if (totalParts > 1) {
                 finalTitle += " (Part " + part + ")";

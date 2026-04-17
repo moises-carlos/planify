@@ -23,13 +23,11 @@ public class RangeTaskStrategy implements TaskStrategy {
         LocalDateTime current = startDate;
 
         while (remainingHours > 0) {
-            // Só cria a tarefa se o dia atual estiver na lista "de seg a qua"
             if (allowedDays.contains(current.getDayOfWeek())) {
-                int hoursForToday = Math.min(remainingHours, 2); // Ex: limite de 2h/dia
+                int hoursForToday = Math.min(remainingHours, 2);
                 tasks.add(new Task(objective.getTitle(), current, hoursForToday * 60, goal, objective.getCategory()));
                 remainingHours -= hoursForToday;
             }
-            // Pula para o próximo dia para testar se é permitido
             current = current.plusDays(1).withHour(8).withMinute(0);
         }
         return tasks;

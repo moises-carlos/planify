@@ -1,8 +1,8 @@
-package br.com.moisescarlos.planify.integration.scheduler;
+package br.com.moisescarlos.planify.infrastructure.integration.scheduler;
 
 import br.com.moisescarlos.planify.domain.model.Task;
-import br.com.moisescarlos.planify.integration.notion.NotionClient;
-import br.com.moisescarlos.planify.integration.telegram.TelegramClient;
+import br.com.moisescarlos.planify.infrastructure.integration.notion.NotionClient;
+import br.com.moisescarlos.planify.infrastructure.integration.telegram.TelegramClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -21,7 +21,6 @@ public class NotificationTaskScheduler {
     private final NotionClient notionClient;
     private final TelegramClient telegramClient;
 
-    // ✅ FIX 3: Controle de tarefas já notificadas para evitar duplicatas
     private final Set<String> notifiedTaskIds = ConcurrentHashMap.newKeySet();
 
     public NotificationTaskScheduler(NotionClient notionClient, TelegramClient telegramClient) {
@@ -29,30 +28,25 @@ public class NotificationTaskScheduler {
         this.telegramClient = telegramClient;
     }
 
-    // ✅ FIX 6: Cron configurável via properties com fallback padrão (a cada 1 minuto)
     @Scheduled(cron = "${planify.scheduler.cron:0 * * * * *}")
     public void checkUpcomingTasks() {
         LocalDateTime now = LocalDateTime.now();
 
-        // ✅ FIX 2: Busca em janela de tempo (agora+9min até agora+11min)
-        // Evita dependência de precisão de segundos
+
         LocalDateTime windowStart = now.plusMinutes(9);
         LocalDateTime windowEnd = now.plusMinutes(11);
 
         log.debug("Verificando tarefas entre {} e {}", windowStart, windowEnd);
 
         try {
-            // ✅ FIX 2: Método agora recebe range ao invés de instante exato
             List<Task> upcomingTasks = notionClient.findTasksInTimeRange(windowStart, windowEnd);
 
             for (Task task : upcomingTasks) {
-                // ✅ FIX 3: Pula tarefas já notificadas
                 if (notifiedTaskIds.contains(task.getId())) {
                     log.debug("Tarefa '{}' já notificada, ignorando.", task.getTitle());
                     continue;
                 }
 
-                // ✅ FIX 5: Try/catch por tarefa — falha em uma não bloqueia as demais
                 try {
                     String alert = String.format(
                             "⏰ <b>Atenção!</b>\nSua tarefa <i>\"%s\"</i> começa em 10 minutos!",
@@ -67,7 +61,6 @@ public class NotificationTaskScheduler {
                 }
             }
 
-            // ✅ Limpeza: remove IDs de tarefas que já passaram para evitar vazamento de memória
             cleanupNotifiedIds(now);
 
         } catch (Exception e) {
@@ -75,7 +68,6 @@ public class NotificationTaskScheduler {
         }
     }
 
-    // Remove tarefas já passadas do Set para não crescer indefinidamente
     private void cleanupNotifiedIds(LocalDateTime now) {
         try {
             List<Task> pastTasks = notionClient.findTasksInTimeRange(

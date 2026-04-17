@@ -14,21 +14,19 @@ import java.util.regex.Pattern;
 
 public class DateParser {
 
-    // Extrai o Horário (ex: 14:30, 14h30, as 14h)
     public static LocalTime parseTime(String input) {
         String text = input.toLowerCase();
-        // Procura por "as 10h", "às 10:30" ou o formato de relógio "10:30"
         Matcher timeMatcher = Pattern.compile("(?:as|às|at)\\s+(\\d{1,2})(?:[:h](\\d{2})?)?|(\\d{1,2}:\\d{2})").matcher(text);
 
         if (timeMatcher.find()) {
             int hour;
             int minute = 0;
 
-            if (timeMatcher.group(3) != null) { // Formato 14:30
+            if (timeMatcher.group(3) != null) {
                 String[] parts = timeMatcher.group(3).split(":");
                 hour = Integer.parseInt(parts[0]);
                 minute = Integer.parseInt(parts[1]);
-            } else { // Formato "as 14h" ou "as 14:30"
+            } else {
                 hour = Integer.parseInt(timeMatcher.group(1));
                 if (timeMatcher.group(2) != null) {
                     minute = Integer.parseInt(timeMatcher.group(2));

@@ -19,7 +19,6 @@ public class SmartObjectiveParser implements ObjectiveParser {
     @Override
     public Objective parse(String input) {
         try {
-            // Só aceita o Regex se for um comando curto e ultra específico
             return regexParser.parse(input);
         } catch (Exception e) {
             System.out.println("Regex falhou ou frase complexa. Ativando cérebro da IA...");

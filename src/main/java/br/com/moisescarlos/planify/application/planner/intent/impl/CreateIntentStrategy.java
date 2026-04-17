@@ -8,8 +8,8 @@ import br.com.moisescarlos.planify.domain.model.Objective;
 import br.com.moisescarlos.planify.domain.model.Task;
 import br.com.moisescarlos.planify.domain.parser.GroqParser;
 import br.com.moisescarlos.planify.exception.BusinessRuleException;
-import br.com.moisescarlos.planify.integration.notion.NotionClient;
-import br.com.moisescarlos.planify.integration.telegram.TelegramClient;
+import br.com.moisescarlos.planify.infrastructure.integration.notion.NotionClient;
+import br.com.moisescarlos.planify.infrastructure.integration.telegram.TelegramClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

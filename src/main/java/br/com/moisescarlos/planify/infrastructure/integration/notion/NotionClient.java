@@ -1,4 +1,4 @@
-package br.com.moisescarlos.planify.integration.notion;
+package br.com.moisescarlos.planify.infrastructure.integration.notion;
 
 import br.com.moisescarlos.planify.domain.model.Goal;
 import br.com.moisescarlos.planify.domain.model.Task;
@@ -28,7 +28,6 @@ public class NotionClient {
     private String databaseId;
 
     public NotionClient() {
-        // Factory necessária para habilitar o método PATCH (usado em update e archive)
         var factory = new HttpComponentsClientHttpRequestFactory(HttpClients.createDefault());
         this.restTemplate = new RestTemplate(factory);
     }
@@ -64,13 +63,9 @@ public class NotionClient {
         }
     }
 
-    /**
-     * Busca tarefas por título (Contém). Essencial para MOVE e DELETE.
-     */
     public List<Task> findTasksByTitle(String title) {
         String url = "https://api.notion.com/v1/databases/" + databaseId + "/query";
 
-        // Filtro: Título contém a string informada AND Status não está concluído
         Map<String, Object> requestBody = Map.of("filter", Map.of("and", List.of(
                 Map.of("property", "Nome", "rich_text", Map.of("contains", title)),
                 Map.of("property", "Status", "status", Map.of("does_not_equal", "Concluído"))
@@ -100,9 +95,6 @@ public class NotionClient {
         }
     }
 
-    /**
-     * Atualiza o Status para 'Concluído' ou arquiva a página (Delete).
-     */
     public void updateTaskStatus(String pageId, String newStatus) {
         String url = "https://api.notion.com/v1/pages/" + pageId;
         Map<String, Object> body = Map.of("properties", Map.of("Status", Map.of("status", Map.of("name", newStatus))));
@@ -125,9 +117,6 @@ public class NotionClient {
         }
     }
 
-    /**
-     * Métodos de Verificação de Conflito e Listagem
-     */
     public List<String> getConflictingTaskNames(LocalDateTime start, int duration, String currentTaskTitle) {
         List<Task> overlapping = findTasksInTimeRange(start, start.plusMinutes(duration));
         String baseTitle = currentTaskTitle.split("\\(")[0].trim().toLowerCase();
@@ -195,12 +184,10 @@ public class NotionClient {
     public List<Task> findTasksByTime(LocalDateTime targetTime) {
         String url = "https://api.notion.com/v1/databases/" + databaseId + "/query";
 
-        // Formata para o padrão ISO que o Notion entende (Ex: 2026-04-15T15:00:00-03:00)
         String isoDate = targetTime.withSecond(0).withNano(0)
                 .atZone(ZoneId.of("America/Sao_Paulo"))
                 .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
 
-        // Filtro: Data EXATAMENTE igual ao targetTime AND Status não concluído
         Map<String, Object> body = Map.of(
                 "filter", Map.of(
                         "and", List.of(
@@ -242,10 +229,8 @@ public class NotionClient {
     }
 
     public void updateStatus(String pageId, String newStatusName) {
-        // A URL para atualizar uma página termina com o ID dela
         String url = "https://api.notion.com/v1/pages/" + pageId;
 
-        // Estrutura: properties -> Status -> status -> name
         Map<String, Object> body = Map.of(
                 "properties", Map.of(
                         "Status", Map.of(
@@ -255,7 +240,6 @@ public class NotionClient {
         );
 
         try {
-            // Notion exige PATCH para atualizações parciais
             restTemplate.patchForObject(url, new HttpEntity<>(body, createHeaders()), String.class);
             log.info("Sucesso! Página {} movida para o status: {}", pageId, newStatusName);
         } catch (Exception e) {
@@ -267,7 +251,6 @@ public class NotionClient {
         String url = "https://api.notion.com/v1/databases/" + databaseId + "/query";
         String sevenDaysAgo = LocalDate.now().minusDays(7).toString();
 
-        // Filtro: Status == 'Concluído' AND Data >= 7 dias atrás
         Map<String, Object> body = Map.of("filter", Map.of("and", List.of(
                 Map.of("property", "Status", "status", Map.of("equals", "Concluído")),
                 Map.of("property", "Data", "date", Map.of("on_or_after", sevenDaysAgo))

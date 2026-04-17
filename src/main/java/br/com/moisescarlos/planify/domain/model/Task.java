@@ -3,13 +3,13 @@ package br.com.moisescarlos.planify.domain.model;
 import br.com.moisescarlos.planify.domain.enums.TaskStatus;
 import br.com.moisescarlos.planify.exception.BusinessRuleException;
 import lombok.Getter;
-import lombok.Setter; // Adicione o Setter para o ID
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Getter
 public class Task {
-    @Setter private String id; // Novo campo necessário para o Notion (MOVE/DELETE)
+    @Setter private String id;
     private String title;
     private LocalDateTime scheduledDateTime;
     private int durationMinutes;

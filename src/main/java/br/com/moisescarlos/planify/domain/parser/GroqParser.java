@@ -44,18 +44,16 @@ public class GroqParser {
     }
 
     public Objective parseWithAI(String userInput) {
-        // 📅 GERADOR DE CALENDÁRIO: Cria a tabela dos próximos 7 dias para a IA não errar
         StringBuilder calendarRef = new StringBuilder();
         calendarRef.append("Tabela de Referência (Use para calcular as datas):\n");
         for (int i = 0; i <= 7; i++) {
             LocalDate d = LocalDate.now().plusDays(i);
-            String dayName = d.format(DateTimeFormatter.ofPattern("EEEE", new Locale("pt", "BR")));
+            String dayName = d.format(DateTimeFormatter.ofPattern("EEEE", Locale.forLanguageTag("pt-BR")));
             calendarRef.append("- ").append(dayName).append(": ").append(d).append("\n");
         }
 
-        String todayName = LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE", new Locale("pt", "BR")));
+        String todayName = LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE", Locale.forLanguageTag("pt-BR")));
 
-        // ✅ PROMPT ESTRUTURADO COM CALENDÁRIO INJETADO
         String systemPrompt = "Você é o cérebro do Planify. Extraia os dados do usuário e retorne APENAS um objeto JSON válido.\n" +
                 "CONTEXTO TEMPORAL:\n" +
                 "Hoje é " + todayName + " (" + LocalDate.now() + ").\n" +
@@ -164,7 +162,6 @@ public class GroqParser {
 
         LocalDateTime date = tryParseDateTime(rawDate, now);
 
-        // Dupla proteção: Se o usuário digitou "amanhã", mas a IA retornou a data de hoje
         if (userInput.toLowerCase().contains("amanhã") && date.toLocalDate().equals(LocalDate.now())) {
             log.debug("Correção de fallback ativada para 'amanhã'.");
             date = date.plusDays(1);
@@ -174,7 +171,6 @@ public class GroqParser {
     }
 
     private LocalDateTime tryParseDateTime(String rawDate, LocalDateTime fallback) {
-        // Limpa a "sujeira" do timezone que o Llama 3 às vezes gera (+0000 vira Z)
         String sanitizedDate = rawDate.replaceAll("\\+0000$", "Z");
 
         if (sanitizedDate.length() <= 10) {

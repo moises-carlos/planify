@@ -3,7 +3,7 @@ package br.com.moisescarlos.planify.domain.model;
 import br.com.moisescarlos.planify.domain.enums.ObjectiveType;
 import br.com.moisescarlos.planify.exception.BusinessRuleException;
 import lombok.Getter;
-import lombok.Setter; // Adicionado Setter para a Intent
+import lombok.Setter;
 
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
@@ -18,7 +18,7 @@ public class Objective {
     private LocalDateTime suggestedStartDate;
     private List<DayOfWeek> allowedDays;
 
-    @Setter // A IA vai preencher isso via SmartObjectiveParser
+    @Setter
     private String intent;
 
     public Objective(String title, int amount, ObjectiveType type, String category, LocalDateTime suggestedStartDate, List<DayOfWeek> allowedDays) {
@@ -31,6 +31,6 @@ public class Objective {
         this.category = category;
         this.suggestedStartDate = suggestedStartDate;
         this.allowedDays = allowedDays;
-        this.intent = "CREATE"; // Valor padrão para evitar NullPointerException
+        this.intent = "CREATE";
     }
 }

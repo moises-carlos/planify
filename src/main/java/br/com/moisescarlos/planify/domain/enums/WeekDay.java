@@ -25,7 +25,7 @@ public enum WeekDay {
     public static WeekDay fromText(String text) {
         String lowerText = text.toLowerCase();
         for (WeekDay day : values()) {
-            // Verifica se o texto contém algum dos apelidos (ex: "seg" ou "segunda")
+
             if (Arrays.stream(day.aliases).anyMatch(lowerText::contains)) {
                 return day;
             }

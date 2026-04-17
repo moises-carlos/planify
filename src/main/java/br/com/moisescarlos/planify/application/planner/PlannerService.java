@@ -1,32 +1,16 @@
 package br.com.moisescarlos.planify.application.planner;
 
-import br.com.moisescarlos.planify.application.planner.intent.IntentStrategy;
-import br.com.moisescarlos.planify.domain.model.Objective;
-import br.com.moisescarlos.planify.domain.parser.GroqParser;
-import br.com.moisescarlos.planify.exception.BusinessRuleException;
+import br.com.moisescarlos.planify.application.planner.usecase.HandlePlannerCommandUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class PlannerService {
 
-    private final GroqParser groqParser;
-    private final List<IntentStrategy> intentStrategies;
+    private final HandlePlannerCommandUseCase handlePlannerCommandUseCase;
 
     public void handleCommand(String userInput) {
-        // IA assume o controle total
-        Objective objective = groqParser.parseWithAI(userInput);
-        String intent = objective.getIntent();
-
-        System.out.println("LOG: Processando " + intent + " para " + objective.getTitle());
-
-        intentStrategies.stream()
-                .filter(s -> s.supports(intent))
-                .findFirst()
-                .orElseThrow(() -> new BusinessRuleException("Erro: Intenção '" + intent + "' não suportada."))
-                .execute(objective);
+        handlePlannerCommandUseCase.execute(userInput);
     }
 }

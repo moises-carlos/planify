@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface TaskStrategy {
-    boolean supports(Objective objective); // Verifica se esta estratégia é a certa para o tipo de objetivo
+    boolean supports(Objective objective);
 
-    List<Task> generateTasks(Objective objective, Goal goal, LocalDateTime startDate);//Retorna a lista de tarefas geradas
+    List<Task> generateTasks(Objective objective, Goal goal, LocalDateTime startDate);
 }
